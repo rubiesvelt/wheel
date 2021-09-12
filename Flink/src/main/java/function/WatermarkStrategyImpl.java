@@ -1,7 +1,6 @@
-package functions;
+package function;
 
 import org.apache.flink.api.common.eventtime.*;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple3;
 
 public class WatermarkStrategyImpl implements WatermarkStrategy<Tuple3<String, Integer, Long>> {
