@@ -1,6 +1,8 @@
 package demo;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -24,7 +26,7 @@ public class ServiceCenter implements Server {
     private static int port;
 
 
-    public ServiceCenter(int port){
+    public ServiceCenter(int port) {
         ServiceCenter.port = port;
     }
 
@@ -34,11 +36,11 @@ public class ServiceCenter implements Server {
         ServerSocket server = new ServerSocket();
         server.bind(new InetSocketAddress(port));
         System.out.println("demo.Server Start .....");
-        try{
-            while(true){
+        try {
+            while (true) {
                 executor.execute(new ServiceTask(server.accept()));
             }
-        }finally {
+        } finally {
             server.close();
         }
     }
@@ -65,7 +67,7 @@ public class ServiceCenter implements Server {
     }
 
     private static class ServiceTask implements Runnable {
-        Socket client = null;
+        Socket client;
 
         public ServiceTask(Socket client) {
             this.client = client;
@@ -75,28 +77,30 @@ public class ServiceCenter implements Server {
         public void run() {
             ObjectInputStream input = null;
             ObjectOutputStream output = null;
-            try{
+            try {
+                System.out.println("getting input ...");
                 input = new ObjectInputStream(client.getInputStream());
-                String serviceName = input.readUTF();
-                String methodName = input.readUTF();
-                Class<?>[] parameterTypes = (Class<?>[]) input.readObject();
-                Object[] arguments = (Object[]) input.readObject();
-                Class serviceClass = serviceRegistry.get(serviceName);
-                if(serviceClass == null){
+                System.out.println("catching input ...");
+                String serviceName = input.readUTF();  // 读出类名
+                String methodName = input.readUTF();  // 读出方法名
+                Class<?>[] parameterTypes = (Class<?>[]) input.readObject();  // 读出方法参数类型
+                Object[] arguments = (Object[]) input.readObject();  // 读出方法输入对象
+                Class<?> serviceClass = serviceRegistry.get(serviceName);  // 由 类名 获得 类的class对象
+                if (serviceClass == null) {
                     throw new ClassNotFoundException(serviceName + "not found!");
                 }
-                Method method = serviceClass.getMethod(methodName, parameterTypes);
-                Object result = method.invoke(serviceClass.newInstance(), arguments);
+                Method method = serviceClass.getMethod(methodName, parameterTypes);  // 获取相应方法
+                Object result = method.invoke(serviceClass.newInstance(), arguments);  // 反射调用方法
 
                 output = new ObjectOutputStream(client.getOutputStream());
                 output.writeObject(result);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
-            }finally {
-                if(output!=null){
-                    try{
+            } finally {
+                if (output != null) {
+                    try {
                         output.close();
-                    }catch (IOException e){
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }

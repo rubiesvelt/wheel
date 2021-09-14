@@ -16,7 +16,9 @@ public class RPCClient<T> {
 
     public static <T> T getRemoteProxyObj(final Class<?> serviceInterface, final InetSocketAddress addr) {
         // 1.将本地的接口调用转换成JDK的动态代理，在动态代理中实现接口的远程调用
-        return (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class<?>[]{serviceInterface},
+        return (T) Proxy.newProxyInstance(
+                serviceInterface.getClassLoader(),
+                new Class<?>[]{serviceInterface},
                 new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -29,6 +31,7 @@ public class RPCClient<T> {
                             socket.connect(addr);
 
                             // 3.将远程服务调用所需的接口类、方法名、参数列表等编码后发送给服务提供者
+                            // 因为 Server 那边会接受这些东西
                             output = new ObjectOutputStream(socket.getOutputStream());
                             output.writeUTF(serviceInterface.getName());
                             output.writeUTF(method.getName());
